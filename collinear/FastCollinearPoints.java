@@ -12,22 +12,17 @@ import java.util.Arrays;
 import java.util.LinkedList;
 
 public class FastCollinearPoints {
-    private int n; // Number of straight lines
+    private int n = 0; // Number of straight lines
     private LineSegment[] a; // Collection of straight lines
-    private final boolean DEBUG = true;
 
     // finds all line segments containing 4 or more points
     public FastCollinearPoints(Point[] points) {
         // Throw an IllegalArgumentException if:
         // * the argument to the constructor is null
-        if (points == null) {
-            throw new IllegalArgumentException();
-        }
+        if (points == null) throw new IllegalArgumentException();
 
-        LinkedList<LineSegment> b = new LinkedList<>();
         LinkedList<Point> bHeads = new LinkedList<>();
         LinkedList<Point> bTails = new LinkedList<>();
-        n = 0;
         for (int i = 0, j = points.length; i < j; i++) {
             Point thisPoint = points[i];
             // * any point in the array is null
@@ -67,12 +62,6 @@ public class FastCollinearPoints {
                 if (newSlope == oldSlope) {
                     collinearPoints++;
 
-                    if (DEBUG) {
-                        System.out.println(
-                                origin + " is collinear with " + destination + ", making point #"
-                                        + collinearPoints);
-                    }
-
                     // If this point is smaller than the head, it's the new head
                     if (head.compareTo(destination) > 0) {
                         head = destination;
@@ -82,76 +71,34 @@ public class FastCollinearPoints {
                         tail = destination;
                     }
                 }
-                // If the current slope does NOT match the previous slope, the line has ended
                 // Record the line segment as least point to greatest point
                 if (collinearPoints >= 4) {
                     // If this line is new, store it in a list of lines
                     boolean newLine = true;
 
-                    if (DEBUG) System.out.println(
-                            "Checking to see if " + (new LineSegment(head, tail)) + " is new");
-
                     // Compare this head and tail with all existing heads and tails
-                    for (int y = 0, z = b.size(); y < z; y++) {
+                    for (int y = 0; y < bHeads.size(); y++) {
                         Point recordedHead = bHeads.get(y);
                         Point recordedTail = bTails.get(y);
 
-                        // If slope is same and either the head or tail are the same, merge lines
+                        // If slope is same and either the head or tail are the same
                         if (head.slopeTo(recordedTail) == head.slopeTo(tail)) {
+                            // Make sure we don't make a new line
+                            newLine = false;
                             // If this segment has already been recorded, it's not a new line, break
-                            if (recordedHead.equals(head) && recordedTail.equals(tail)) {
-                                newLine = false;
-
-                                if (DEBUG) System.out
-                                        .println("...that line segment has been recorded 👎🏻");
-                                break;
-                            }
-                            // Otherwise,
+                            if (recordedHead.equals(head) && recordedTail.equals(tail)) break;
                             else {
-                                // If the head or tail have already been recorded, it's not _new_
-                                // But it still could possibly be merged with an existing segment
-                                if (recordedHead.equals(head) || recordedTail.equals(tail)
-                                        || recordedHead.equals(tail) || recordedTail.equals(head)) {
-                                    if (DEBUG) System.out
-                                            .println("...that line segment has been recorded 🤝");
-                                    newLine = false;
-
-                                    // If the head is smaller than the current head or tail is bigger than current tail, take the better
-                                    if (recordedHead.compareTo(head) < 0) {
-                                        bHeads.set(y, head);
-                                    }
-                                    else {
-                                        if (DEBUG) System.out.println("Head isn't smaller");
-                                    }
-                                    if (recordedTail.compareTo(tail) > 0) {
-                                        bHeads.set(y, tail);
-                                    }
-                                    else {
-                                        if (DEBUG) System.out.println("Tail isn't bigger");
-                                    }
-
-                                    // If the head is the same as the recorded tail, take that other line's head
-                                    if (recordedTail.equals(head)) {
-                                        bHeads.set(y, recordedHead);
-                                    }
-
-                                    // If the tail is the same as the recorded head, take that other line's tail
-                                    if (recordedHead.equals(tail)) {
-                                        bTails.set(y, recordedTail);
-                                    }
-                                }
+                                // If the head is smaller than the current head or tail is bigger than current tail, take the better
+                                if (recordedHead.compareTo(head) > 0) bHeads.set(y, head);
+                                if (recordedTail.compareTo(tail) < 0) bTails.set(y, tail);
                             }
                         }
                     }
 
                     if (newLine) {
-                        if (DEBUG) {
-                            System.out.println("...that line segment has NOT been recorded 👍🏻");
-                        }
                         n++;
                         bHeads.add(head);
                         bTails.add(tail);
-                        b.add(new LineSegment(head, tail));
                     }
 
                     collinearPoints = 2;
@@ -160,25 +107,9 @@ public class FastCollinearPoints {
             a = new LineSegment[n];
         }
 
-        for (int i = 0; i < b.size(); i++) {
-            a[i] = b.get(i);
+        for (int i = 0; i < bHeads.size(); i++) {
+            a[i] = new LineSegment(bHeads.get(i), bTails.get(i));
         }
-        // TODO Dedupe segments
-        /*
-        (14000, 10000) -> (32000, 10000)
-        (14000, 10000) -> (32000, 10000)
-        (14000, 10000) -> (32000, 10000)
-        (14000, 10000) -> (32000, 10000)
-        (14000, 10000) -> (32000, 10000)
-
-        should return
-
-        (14000, 10000) -> (32000, 10000)
-
-        First, get them all going from small to big
-        Second, remove duplicates
-
-         */
     }
 
     // the number of line segments
@@ -213,7 +144,6 @@ public class FastCollinearPoints {
 
         // print and draw the line segments
         FastCollinearPoints collinear = new FastCollinearPoints(points);
-        System.out.println("=====");
         for (LineSegment segment : collinear.segments()) {
             StdOut.println(segment);
             segment.draw();
