@@ -16,6 +16,10 @@ public class BruteCollinearPoints {
 
     // finds all line segments containing 4 points
     public BruteCollinearPoints(Point[] points) {
+        if (points == null) {
+            throw new IllegalArgumentException();
+        }
+
         LinkedList<LineSegment> b = new LinkedList<>();
         n = 0;
         int ps = points.length;
