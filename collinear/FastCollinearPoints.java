@@ -14,6 +14,8 @@ import java.util.LinkedList;
 public class FastCollinearPoints {
     private int n = 0; // Number of straight lines
     private LineSegment[] a; // Collection of straight lines
+    private LinkedList<Point> bHeads = new LinkedList<>();
+    private LinkedList<Point> bTails = new LinkedList<>();
 
     // finds all line segments containing 4 or more points
     public FastCollinearPoints(Point[] points) {
@@ -21,8 +23,6 @@ public class FastCollinearPoints {
         // * the argument to the constructor is null
         if (points == null) throw new IllegalArgumentException();
 
-        LinkedList<Point> bHeads = new LinkedList<>();
-        LinkedList<Point> bTails = new LinkedList<>();
         for (int i = 0, j = points.length; i < j; i++) {
             Point thisPoint = points[i];
             // * any point in the array is null
@@ -41,74 +41,85 @@ public class FastCollinearPoints {
         for (int i = 0, j = points.length; i < j; i++) {
             Point origin = points[i];
 
-            // * Sort points by slope to current origin
-            Point[] pointsCopy = points.clone();
-            Arrays.sort(pointsCopy, origin.slopeOrder());
+            //  Sort points by slope to origin
+            Point[] sortedPoints = points.clone();
+            Arrays.sort(sortedPoints, origin.slopeOrder());
+            // System.out.println("Comparing slopes vs " + origin);
 
-            Point head = origin;
-            Point tail = origin;
-            double newSlope = 0;
-            // Two points are "collinear" with each other
-            int collinearPoints = 2;
+            Point min = origin;
+            Point max = origin;
 
-            // Find each set of 4+ collinear points and save them as a line from the smallest to the largest
+            //  Store all points with same slope in an array of collinear points
+            LinkedList<Point> collinearPoints = new LinkedList<>();
+            collinearPoints.push(origin);
+
+            double lastSlope;
+            double thisSlope = 0;
+
             for (int k = 0; k < j; k++) {
-                double oldSlope = newSlope;
+                lastSlope = thisSlope;
+                thisSlope = origin.slopeTo(sortedPoints[k]);
 
-                Point destination = pointsCopy[k];
-                newSlope = origin.slopeTo(destination);
-
-                // If the current slope matches the previous slope, grow the line
-                if (newSlope == oldSlope) {
-                    collinearPoints++;
-
-                    // If this point is smaller than the head, it's the new head
-                    if (head.compareTo(destination) > 0) {
-                        head = destination;
-                    }
-                    // If this point is larger than the tail, it's the new tail
-                    if (tail.compareTo(destination) < 0) {
-                        tail = destination;
-                    }
+                // If last slope and this slope are the same, add it to the collinear points
+                if (thisSlope == lastSlope) {
+                    collinearPoints.push(sortedPoints[k]);
+                    //  Iterate over each point and get the smallest and largest
+                    if (min.compareTo(sortedPoints[k]) > 0) min = sortedPoints[k];
+                    if (max.compareTo(sortedPoints[k]) < 0) max = sortedPoints[k];
                 }
-                // Record the line segment as least point to greatest point
-                if (collinearPoints >= 4) {
-                    // If this line is new, store it in a list of lines
-                    boolean newLine = true;
-
-                    // Compare this head and tail with all existing heads and tails
-                    for (int y = 0; y < bHeads.size(); y++) {
-                        Point recordedHead = bHeads.get(y);
-                        Point recordedTail = bTails.get(y);
-
-                        // If slope is same and either the head or tail are the same
-                        if (head.slopeTo(recordedTail) == head.slopeTo(tail)) {
-                            // Make sure we don't make a new line
-                            newLine = false;
-                            // If this segment has already been recorded, it's not a new line, break
-                            if (recordedHead.equals(head) && recordedTail.equals(tail)) break;
-                            else {
-                                // If the head is smaller than the current head or tail is bigger than current tail, take the better
-                                if (recordedHead.compareTo(head) > 0) bHeads.set(y, head);
-                                if (recordedTail.compareTo(tail) < 0) bTails.set(y, tail);
-                            }
+                // If it doesn't match the current slope or we're at the end of points,
+                // we've hit the end of this series of collinear points
+                if (thisSlope != lastSlope || k == sortedPoints.length - 1) {
+                    // System.out.println("Found " + collinearPoints.size() + " collinear points");
+                    //  If there are 4 or more points in that array:
+                    if (collinearPoints.size() >= 3) {
+                        // System.out.println("Series of " + collinearPoints.size() + " collinear points is made of:");
+                        for (int m = 0; m < collinearPoints.size(); m++) {
+                            // System.out.println("Collinear point: " + collinearPoints.get(m));
                         }
+                        collinearPoints.clear();
+                        handleNewPoint(min, max);
                     }
-
-                    if (newLine) {
-                        n++;
-                        bHeads.add(head);
-                        bTails.add(tail);
-                    }
-
-                    collinearPoints = 2;
                 }
             }
-            a = new LineSegment[n];
         }
+
+        a = new LineSegment[n];
 
         for (int i = 0; i < bHeads.size(); i++) {
             a[i] = new LineSegment(bHeads.get(i), bTails.get(i));
+        }
+    }
+
+    // Determine if a point is new, and if so record it
+    private void handleNewPoint(Point head, Point tail) {
+        // System.out.println("Adding " + head + " -> " + tail);
+        // If this line is new, store it in a list of lines
+        boolean newLine = true;
+
+        // Compare this head and tail with all existing heads and tails
+        for (int y = 0; y < bHeads.size(); y++) {
+            Point recordedHead = bHeads.get(y);
+            Point recordedTail = bTails.get(y);
+
+            // If slope is same and either the head or tail are the same
+            if (head.slopeTo(recordedTail) == head.slopeTo(tail)) {
+                // Make sure we don't make a new line
+                newLine = false;
+                // If this segment has already been recorded, it's not a new line, break
+                if (recordedHead.equals(head) && recordedTail.equals(tail)) break;
+                else {
+                    // If the head is smaller than the current head or tail is bigger than current tail, take the better
+                    if (recordedHead.compareTo(head) > 0) bHeads.set(y, head);
+                    if (recordedTail.compareTo(tail) < 0) bTails.set(y, tail);
+                }
+            }
+        }
+
+        if (newLine) {
+            n++;
+            bHeads.add(head);
+            bTails.add(tail);
         }
     }
 
