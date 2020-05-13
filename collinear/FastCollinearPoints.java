@@ -60,13 +60,20 @@ public class FastCollinearPoints {
                 if (collinearPoints.size() == 2) continue;
 
                 // If the slope from origin -> first collinear point is the same as origin -> last collinear point, pass it to the handler
-                if (origin.slopeTo(collinearPoints.get(1)) == (origin.slopeTo(thisPoint))) {
+                // Otherwise, clear the collinear points, add this point again, go back to start of loop
+                if (origin.slopeTo(collinearPoints.get(1)) != (origin.slopeTo(thisPoint))) {
+                    collinearPoints.pop();
                     if (collinearPoints.size() >= 4) {
                         handleNewSegment(collinearPoints);
                     }
+                    collinearPoints.clear();
+                    collinearPoints.push(origin);
+                    collinearPoints.push(thisPoint);
                 }
-                // Otherwise, clear the collinear points, add this point again, go back to start of loop
-                else {
+                else if (k == sortedPoints.length - 1) {
+                    if (collinearPoints.size() >= 4) {
+                        handleNewSegment(collinearPoints);
+                    }
                     collinearPoints.clear();
                     collinearPoints.push(origin);
                     collinearPoints.push(thisPoint);
@@ -84,22 +91,19 @@ public class FastCollinearPoints {
 
     // Determine if a point is new, and if so record it
     private void handleNewSegment(LinkedList<Point> points) {
-        Point[] seriesOfPoints = new Point[points.size()];
+        Point min = points.get(0);
+        Point max = points.get(0);
 
         for (int m = 0; m < points.size(); m++) {
-            seriesOfPoints[m] = points.get(m);
+            if (min.compareTo(points.get(m)) > 0) min = points.get(m);
+            if (max.compareTo(points.get(m)) < 0) max = points.get(m);
         }
-
-        Arrays.sort(seriesOfPoints, Point::compareTo);
 
         // for (int m = 0; m < seriesOfPoints.length; m++) {
         //     System.out.print(seriesOfPoints[m]);
         //     if (m < points.size() - 1) System.out.print(" -> ");
         //     else System.out.print("\n");
         // }
-
-        Point min = seriesOfPoints[0];
-        Point max = seriesOfPoints[seriesOfPoints.length - 1];
 
         // Compare this segment to all segments
         for (int i = 0; i < n; i++) {
@@ -114,7 +118,6 @@ public class FastCollinearPoints {
         bHeads.add(min);
         bTails.add(max);
     }
-
 
     // the number of line segments
     public int numberOfSegments() {
