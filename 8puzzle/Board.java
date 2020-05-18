@@ -20,6 +20,7 @@ public class Board {
     // create a board from an n-by-n array of tiles,
     // where tiles[row][col] = tile at (row, col)
     public Board(int[][] tiles) {
+        if (tiles == null) throw new IllegalArgumentException();
         // If given a rectangular array, throw an error
         if (tiles.length != tiles[0].length) throw new IllegalArgumentException();
 
@@ -94,17 +95,17 @@ public class Board {
     }
 
     // Return the row a given square resides in
-    public int getRow(int a) {
+    private int getRow(int a) {
         return a / n;
     }
 
     // Return the column a given square resides in
-    public int getCol(int a) {
+    private int getCol(int a) {
         return a % n;
     }
 
     // Return the number of squares needed to travel from a to b
-    public int getDistance(int a, int b) {
+    private int getDistance(int a, int b) {
         // Add the difference in rows to the difference in cols
         //      To find the distance:
         //          Get the row of a    (ya)
@@ -147,7 +148,7 @@ public class Board {
     }
 
     // Make a 2D array from a 1D array
-    public int[][] make2DArrayFrom1DArray(int n, int[] t) {
+    private int[][] make2DArrayFrom1DArray(int n, int[] t) {
         int[][] newArray = new int[n][n];
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {

@@ -19,6 +19,7 @@ public class Solver {
 
     // find a solution to the initial board (using the A* algorithm)
     public Solver(Board initial) {
+        if (initial == null) throw new IllegalArgumentException();
         // Save the provided board
         startingBoard = initial;
 
@@ -44,12 +45,13 @@ public class Solver {
             // Delete the search node with the minimum priority
             // TODO Only dequeue neighbors from last board!
             thisStep = pq.delMin();
-            System.out.println(
-                    "Dequeuing move #" + thisStep.moves + "\nPriority=" + thisStep.priority);
-            System.out.println(thisStep.board);
+            // System.out.println(
+            //         "Dequeuing move #" + thisStep.moves + "\nPriority=" + thisStep.priority);
+            // System.out.println(thisStep.board);
 
             // If you've reached the goal, build the list of steps
             if (thisStep.board.isGoal()) {
+                moves = thisStep.moves;
                 stepsList.push(thisStep.board);
 
                 // Climb through previous boards until hitting the root
@@ -57,7 +59,6 @@ public class Solver {
                     thisStep = thisStep.previousNode;
                     stepsList.push(thisStep.board);
                 } // while
-
                 break;
             } // if
 
@@ -65,6 +66,7 @@ public class Solver {
             if (thisStep.board.hamming() == 2 && thisStep.board.twin().isGoal()) {
                 moves = -1;
                 solvable = false;
+                stepsList = null;
                 break;
             }
 
@@ -76,14 +78,9 @@ public class Solver {
                 If a more appealing board lies on the stack, take it and recalculate the number of moves
                 Chase previous steps back to rootNode to calculate number of moves
                  */
-                int movesCount = 0;
-                SearchNode tempSearchNode = thisStep;
-                while (tempSearchNode.previousNode != null) {
-                    tempSearchNode = tempSearchNode.previousNode;
-                    movesCount++;
-                }
 
-                SearchNode possibleStep = new SearchNode(neighborBoard, movesCount, thisStep);
+                SearchNode possibleStep = new SearchNode(neighborBoard, thisStep.moves + 1,
+                                                         thisStep);
                 /*
                 The critical optimization. A* search has one annoying feature:
                 search nodes corresponding to the same board are enqueued on
@@ -96,17 +93,17 @@ public class Solver {
                  */
 
                 if (thisStep.previousNode == null) {
-                    System.out.println(
-                            "Queuing board possible move #" + possibleStep.moves + "\nPriority="
-                                    + possibleStep.priority);
-                    System.out.println(possibleStep.board);
+                    // System.out.println(
+                    //         "Queuing board possible move #" + possibleStep.moves + "\nPriority="
+                    //                 + possibleStep.priority);
+                    // System.out.println(possibleStep.board);
                     pq.insert(possibleStep);
                 }
                 else if (!neighborBoard.equals(thisStep.previousNode.board)) {
-                    System.out.println(
-                            "Queuing board possible move #" + possibleStep.moves + "\nPriority="
-                                    + possibleStep.priority);
-                    System.out.println(possibleStep.board);
+                    // System.out.println(
+                    //         "Queuing board possible move #" + possibleStep.moves + "\nPriority="
+                    //                 + possibleStep.priority);
+                    // System.out.println(possibleStep.board);
                     pq.insert(possibleStep);
                 }
             }
