@@ -44,11 +44,9 @@ public class Solver {
             // Delete the search node with the minimum priority
             // TODO Only dequeue neighbors from last board!
             thisStep = pq.delMin();
-            System.out.println("Dequeuing move #" + moves + "\nPriority=" + thisStep.priority);
+            System.out.println(
+                    "Dequeuing move #" + thisStep.moves + "\nPriority=" + thisStep.priority);
             System.out.println(thisStep.board);
-
-            // Don't count the first step
-            if (thisStep != rootNode) moves++;
 
             // If you've reached the goal, build the list of steps
             if (thisStep.board.isGoal()) {
@@ -73,7 +71,19 @@ public class Solver {
             // Insert onto the priority queue all neighboring search nodes
             for (Board neighborBoard : thisStep.board.neighbors()) {
                 // System.out.println("Looking for possible move #" + moves);
-                SearchNode possibleStep = new SearchNode(neighborBoard, moves, thisStep);
+                // TODO "thisStep" is not necessarily the correct past step;
+                /*
+                If a more appealing board lies on the stack, take it and recalculate the number of moves
+                Chase previous steps back to rootNode to calculate number of moves
+                 */
+                int movesCount = 0;
+                SearchNode tempSearchNode = thisStep;
+                while (tempSearchNode.previousNode != null) {
+                    tempSearchNode = tempSearchNode.previousNode;
+                    movesCount++;
+                }
+
+                SearchNode possibleStep = new SearchNode(neighborBoard, movesCount, thisStep);
                 /*
                 The critical optimization. A* search has one annoying feature:
                 search nodes corresponding to the same board are enqueued on
@@ -86,14 +96,16 @@ public class Solver {
                  */
 
                 if (thisStep.previousNode == null) {
-                    System.out.println("Queuing board possible move #" + moves + "\nPriority="
-                                               + possibleStep.priority);
+                    System.out.println(
+                            "Queuing board possible move #" + possibleStep.moves + "\nPriority="
+                                    + possibleStep.priority);
                     System.out.println(possibleStep.board);
                     pq.insert(possibleStep);
                 }
                 else if (!neighborBoard.equals(thisStep.previousNode.board)) {
-                    System.out.println("Queuing board possible move #" + moves + "\nPriority="
-                                               + possibleStep.priority);
+                    System.out.println(
+                            "Queuing board possible move #" + possibleStep.moves + "\nPriority="
+                                    + possibleStep.priority);
                     System.out.println(possibleStep.board);
                     pq.insert(possibleStep);
                 }
@@ -104,6 +116,7 @@ public class Solver {
     private class SearchNode implements Comparable<SearchNode> {
         private SearchNode previousNode;
         private int manhattan;
+        private int moves;
         // Avoid using Hamming because it leads to bad solutions
         // private int hamming;
         private Board board;
@@ -112,6 +125,7 @@ public class Solver {
         private SearchNode(Board b, int m, SearchNode p) {
             board = b;
             previousNode = p;
+            // Calculate moves by chasing previous nodes to rootNode
             moves = m;
             manhattan = b.manhattan();
             priority = manhattan + moves;
